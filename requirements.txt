@@ -1,6 +1,6 @@
 pandas 
 plotly
-streamlit
+streamlit>=1.30.0
 streamlit-authenticator
 pyyaml
 gspread
