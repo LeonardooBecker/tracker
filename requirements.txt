@@ -7,3 +7,4 @@ gspread
 oauth2client
 streamlit-oauth
 google-auth-oauthlib
+altair
