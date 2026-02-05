@@ -68,26 +68,50 @@ def check_auth():
     if "user_email" in st.session_state: return st.session_state.user_email
     
     try:
+        # Pega as credenciais
+        client_id = st.secrets["oauth"]["client_id"]
+        client_secret = st.secrets["oauth"]["client_secret"]
+        redirect_uri = st.secrets["oauth"]["redirect_uri"] # Certifique-se que esta URL é a do app publicado!
+
+        # --- A CORREÇÃO ESTÁ AQUI ABAIXO ---
+        # Passamos 'None' no último argumento (revoke_token_url) para evitar o erro 
+        # "Missing revocation endpoint auth method".
         oauth2 = OAuth2Component(
-            st.secrets["oauth"]["client_id"], 
-            st.secrets["oauth"]["client_secret"], 
+            client_id, 
+            client_secret, 
             "https://accounts.google.com/o/oauth2/v2/auth", 
             "https://oauth2.googleapis.com/token", 
             "https://oauth2.googleapis.com/token", 
-            "https://oauth2.googleapis.com/revoke"
+            None  # <--- MUDANÇA: Define Revoke URL como None
         )
-        result = oauth2.authorize_button("Login Google", st.secrets["oauth"]["redirect_uri"], "openid email profile", key="goo", extras_params={"prompt": "select_account"})
+        
+        result = oauth2.authorize_button(
+            "Login com Google", 
+            redirect_uri, 
+            "openid email profile", 
+            key="goo", 
+            extras_params={"prompt": "select_account", "access_type": "offline"}
+        )
         
         if result:
+            # Tenta pegar o token de diferentes formas que a lib pode retornar
             token = result.get("token", {}).get("access_token") or result.get("access_token")
+            
             if token:
+                # Usa o token para perguntar ao Google quem é o dono
                 r = requests.get("https://www.googleapis.com/oauth2/v1/userinfo", headers={"Authorization": f"Bearer {token}"})
                 if r.status_code == 200:
                     email = r.json().get("email")
                     st.session_state.user_email = email
                     st.rerun()
+                else:
+                    st.error("Falha ao obter dados do usuário.")
+                    
     except Exception as e:
-        st.error(f"Erro Auth: {e}")
+        st.error(f"Erro na Autenticação: {e}")
+        # Dica visual para debug
+        st.caption("Verifique se o CLIENT_ID e CLIENT_SECRET estão corretos nos Secrets do Streamlit Cloud.")
+        
     return None
 
 user_email = check_auth()
