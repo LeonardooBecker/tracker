@@ -1,16 +1,3 @@
-import sys
-import os
-
-# --- CORREÇÃO DE COMPATIBILIDADE (Python 3.13 / Altair) ---
-# Necessário para evitar erros de 'imghdr' em ambientes novos
-if sys.version_info >= (3, 13):
-    import types
-    def what(file, h=None): return None
-    imghdr_module = types.ModuleType("imghdr")
-    imghdr_module.what = what
-    sys.modules["imghdr"] = imghdr_module
-    
-    
 import streamlit as st
 import pandas as pd
 import datetime
